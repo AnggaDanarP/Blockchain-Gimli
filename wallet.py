@@ -57,34 +57,21 @@ class Wallet:
         signature = byte_signature.hex()           
         tx = {
                 'input' : [{'previous_tx' : previous_tx,
-                        'index' : 0, #nilai index ke berapa yang di ambil dr output transaksi sebelumnya
+                        'index' : 000000, #nilai index ke berapa yang di ambil dr output transaksi sebelumnya
+                        'size' : 0,
                         'signature' : signature, #signature dari private key dengan hash tx sebelumnya
-                        'sender_public_key' : public_key}],
-                'output' : [{'receiver_public_key' : input_address},
-                            {'receiver_public_key' : public_key, #reciever publik key is hash
-                            'amount' : amount}]} 
-        start_time = time.time()
+                        'sender_public_key' : public_key,
+                        'sequence' : 'ffffffff'}],
+                'output' : [{'amount' : amount,
+                            'receiver' : input_address,
+                            'receiver_public_key' : public_key, }]}
         dumps_hash_tx = json.dumps(tx, default = str)
-        print("Hashing...")
         hash_tx = hashing(dumps_hash_tx)
         hash_tx_dict = {"hash" : hash_tx}
         tx.update(hash_tx_dict)
-        end_time = time.time()
-        processing_time = end_time - start_time
-        print("Time to hash: ", processing_time)
         return tx
     
     def get_transaction(self):
-        #file_read = open(self.nodes_file, "r")
-        #file_read.seek(0)
-        #data = file_read.read()
-        #file_read.close()
-        #json_file = json.loads(data)
-        #for nodes in json_file['nodes']:
-        #    url = f"http://{nodes}/get_chain"
-        #    response = requests.get(url)
-        #    response_status_code = response.status_code
-        #    if response_status_code == 200:
         filename = filedialog.askopenfile(
             initialdir="/",
             title="Pilih Gambar",

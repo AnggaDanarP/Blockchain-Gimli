@@ -12,19 +12,18 @@ from Gimli_Hash import hashing
 class Blockchain:
     def __init__(self):
         self.chain = []
-        self.transaction = [] #mempools
+        self.transaction = []
+        self.previous_hash = '00000000000000'
+        self.proof = 1
         self.nodes_file = "nodes.json"
         self.nodes = {} #empty set
         self.url_address = "127.0.0.1:5001"
         self.file_check()
-        self.proof = 1
-        self.previous_hash = '0'
         if self.transaction == []:
-            print("buat block baru")
             self.create_block(self.previous_hash)
-        else:
-            print("replace block baru")
+        else :
             self.replace_chain()
+        
     
     def read_node(self):
         file_read = open(self.nodes_file, "r")
@@ -49,17 +48,30 @@ class Blockchain:
         check_sig = vk.verify(signature_byte,prev_tx_byte)
         
         return check_sig
-
+        
         
     def create_block(self, previous_hash):
-        if self.transaction == []: #seharusnya ini bukan self transaction tapi self chain
+        if self.transaction == []:
+            transaction = [{'version': '01000000',
+                'input count' : 0,
+                'input' : [{'previous_tx' : self.previous_hash,
+                        'index' : 000000, #nilai index ke berapa yang di ambil dr output transaksi sebelumnya
+                        'size' : 0,
+                        'signature' : '', #signature dari private key dengan hash tx sebelumnya
+                        'sender_public_key' : '',
+                        'sequence' : 'ffffffff'}],
+                'output count' : 0,
+                'output' : [{'amount' : '',
+                            'receiver' : '',
+                            'receiver_public_key' : '', }],
+                'lock time' : 00000000}]
             block = {
                     'index' : len(self.chain) + 1,
                     'timestamp' : datetime.datetime.now(),
                     'proof' : self.proof,
                     'previous_hash' : previous_hash,
-                    'merkle_root' : "0",
-                    'transaction' : self.transaction}
+                    'merkle_root' : root_tree(transaction),
+                    'transaction' : transaction}
             output = self.proof_of_work(block)
             block['proof'] = output['proof']
             block['hash'] = output['hash']
@@ -67,10 +79,11 @@ class Blockchain:
             self.chain.append(block)
         else:
             block = {
-                    'index' : len(self.chain) + 1,
-                    'timestamp' : datetime.datetime.now(),
-                    'proof' : self.proof,
                     'previous_hash' : previous_hash,
+                    'timestamp' : datetime.datetime.now(),
+                    'index' : len(self.chain) + 1,
+                    'difficulty': '0',
+                    'nonce' : self.proof,
                     'merkle_root' : root_tree(self.transaction),
                     'transaction' : self.transaction}
             output = self.proof_of_work(block)
@@ -109,10 +122,13 @@ class Blockchain:
         encoded_block = json.dumps(block, sort_keys = True, default = str)
         return hashing(encoded_block)
 
-    def add_transaction(self, sender, receiver, hash_ ):
-        self.transaction.append({'input' : sender ,
+    def add_transaction(self, sender, receiver):
+        self.transaction.append({'version': '01000000',
+                                 'input count' : 0,
+                                 'input' : sender ,
+                                 'output count' : 0,
                                  'output' : receiver,
-                                 'hash' : hash_})
+                                 'lock time' : 00000000})
         previous_block = self.get_previous_block()
         return previous_block['index'] + 1
         
@@ -237,7 +253,7 @@ def add_transaction():
         return 'Lengkapi data yang dibutuhkan', 400
     try:
         blockchain.tx_validation(json['input'])
-        index = blockchain.add_transaction(json['input'], json['output'], json['hash'])
+        index = blockchain.add_transaction(json['input'], json['output'])
         response = {'messages' : f'transaction akan dimasukkan ke dalam block ke {index}'}
         return jsonify(response), 201
     except BadSignatureError:
