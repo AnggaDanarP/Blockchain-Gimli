@@ -1,4 +1,3 @@
-import datetime
 import json
 import pathlib
 import time
@@ -102,17 +101,15 @@ class Blockchain:
 
     def proof_of_work(self, mine_block):
         proof = 1
-        check_proof = False
+        difficulty = 1
         output = {}
-        while check_proof is False:
-            mine_block['proof'] = proof
-            hash_operation = self.hash(mine_block)
-            if hash_operation[:1] == '0':
-                check_proof = True
-            else : 
-                print("Nonce = ",proof)
-                print("hash from ^ nonce = ",hash_operation)
-                proof += 1
+        mine_block['proof'] = proof
+        hash_operation = self.hash(mine_block)
+        while not hash_operation.startswith('0' * difficulty):
+            print("Nonce = ",proof)
+            print("hash from ^ nonce = ",hash_operation)
+            proof += 1
+            hash_operation = self.hash(hash_operation)
         output['hash'] = hash_operation
         output['proof'] = proof
         print("Hasil nonce = ",proof)
