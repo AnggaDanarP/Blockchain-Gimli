@@ -64,12 +64,13 @@ class Blockchain:
                 'output' : [{'amount' : '',
                             'receiver' : '',
                             'receiver_public_key' : '', }],
-                'lock time' : 00000000}]
+                'lock time' : '00000000'}]
             block = {
-                    'index' : len(self.chain) + 1,
-                    'timestamp' : datetime.datetime.now(),
-                    'proof' : self.proof,
                     'previous_hash' : previous_hash,
+                    'timestamp' : int(time.time()),
+                    'index' : len(self.chain) + 1,
+                    'difficulty': '0',
+                    'proof' : self.proof,
                     'merkle_root' : root_tree(transaction),
                     'transaction' : transaction}
             output = self.proof_of_work(block)
@@ -80,10 +81,10 @@ class Blockchain:
         else:
             block = {
                     'previous_hash' : previous_hash,
-                    'timestamp' : datetime.datetime.now(),
+                    'timestamp' : int(time.time()),
                     'index' : len(self.chain) + 1,
                     'difficulty': '0',
-                    'nonce' : self.proof,
+                    'proof' : self.proof,
                     'merkle_root' : root_tree(self.transaction),
                     'transaction' : self.transaction}
             output = self.proof_of_work(block)
@@ -248,7 +249,7 @@ def get_chain():
 @app.route('/add_transaction', methods = ['POST'])
 def add_transaction():
     json = request.get_json()
-    transaction_keys = ['input', 'output', 'hash']
+    transaction_keys = ['input', 'output']
     if not all(key in json for key in transaction_keys):
         return 'Lengkapi data yang dibutuhkan', 400
     try:

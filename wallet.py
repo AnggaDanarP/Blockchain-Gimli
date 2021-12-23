@@ -8,7 +8,6 @@ import requests
 from tkinter import filedialog
 import numpy as np
 from PIL import Image
-import time
 
 class Wallet:
     def __init__(self):
@@ -65,10 +64,10 @@ class Wallet:
                 'output' : [{'amount' : amount,
                             'receiver' : input_address,
                             'receiver_public_key' : public_key, }]}
-        dumps_hash_tx = json.dumps(tx, default = str)
-        hash_tx = hashing(dumps_hash_tx)
-        hash_tx_dict = {"hash" : hash_tx}
-        tx.update(hash_tx_dict)
+        #dumps_hash_tx = json.dumps(tx, default = str)
+        #hash_tx = hashing(dumps_hash_tx)
+        #hash_tx_dict = {"hash" : hash_tx}
+        #tx.update(hash_tx_dict)
         return tx
     
     def get_transaction(self):
@@ -82,11 +81,7 @@ class Wallet:
             )
         )
         image = filename.name
-        start_time = time.time()
         amount = np.asarray(Image.open(image))
-        end_time = time.time()
-        processing_time = end_time - start_time
-        print("Time to convert: ", processing_time)
         return str(amount)
     
     def file_check(self):
@@ -94,8 +89,7 @@ class Wallet:
         public_key = self.vk_toString
         address = self.encrypted_public_key
         file = pathlib.Path(self.filename)
-        if file.exists():
-            sum_start_time = time.time()    
+        if file.exists():   
             print("PUBLIC KEY = ", public_key)
             get_tx = self.get_transaction()
             print("POST TRANSACTION")
@@ -111,19 +105,9 @@ class Wallet:
             file_write.write(json.dumps(jsonfile))
             file_write.close()
             self.broadcast(tx)
-            sum_end_time = time.time()
-            sum_processing_time = sum_end_time - sum_start_time
-            print("Total processing time: ", sum_processing_time)
         else:
             self.new(private_key=private_key, public_key=public_key, address=address)
             print("make new file")
             self.file_check()
 
 wallet = Wallet()
-
-
-
-
-
-
-
