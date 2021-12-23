@@ -19,7 +19,7 @@ class Blockchain:
         self.url_address = "127.0.0.1:5001"
         self.file_check()
         if self.transaction == []:
-            self.create_block(self.previous_hash)
+            self.genesis_block()
         else :
             self.replace_chain()
         
@@ -33,11 +33,10 @@ class Blockchain:
         json_file = json.loads(data)
         return json_file["nodes"]
     
-    def tx_validation(self, input_):
-        json_input = input_
-        public_key = json_input[0]['sender_public_key']
-        signature =  json_input[0]['signature']
-        prev_tx = json_input[0]['previous_tx']
+    def tx_validation(self, _input):
+        public_key = _input[0]['sender_public_key']
+        signature =  _input[0]['signature']
+        prev_tx = _input[0]['previous_tx']
         
         vk_byte = codecs.decode(public_key, 'hex')
         vk = VerifyingKey.from_string(vk_byte, curve=SECP256k1)
@@ -47,16 +46,14 @@ class Blockchain:
         check_sig = vk.verify(signature_byte,prev_tx_byte)
         
         return check_sig
-        
-        
-    def create_block(self, previous_hash):
-        if self.transaction == []:
-            transaction = [{'version': '01000000',
+    
+    def genesis_block(self):
+        transaction = [{'version': '01000000',
                 'input count' : 0,
                 'input' : [{'previous_tx' : self.previous_hash,
-                        'index' : 000000, #nilai index ke berapa yang di ambil dr output transaksi sebelumnya
+                        'index' : 000000,
                         'size' : 0,
-                        'signature' : '', #signature dari private key dengan hash tx sebelumnya
+                        'signature' : '', 
                         'sender_public_key' : '',
                         'sequence' : 'ffffffff'}],
                 'output count' : 0,
@@ -64,56 +61,58 @@ class Blockchain:
                             'receiver' : '',
                             'receiver_public_key' : '', }],
                 'lock time' : '00000000'}]
-            block = {
-                    'previous_hash' : previous_hash,
-                    'timestamp' : int(time.time()),
-                    'index' : len(self.chain) + 1,
-                    'difficulty': '0',
-                    'proof' : self.proof,
-                    'merkle_root' : root_tree(transaction),
-                    'transaction' : transaction}
-            output = self.proof_of_work(block)
-            block['proof'] = output['proof']
-            block['hash'] = output['hash']
-            self.transaction = []
-            self.chain.append(block)
-        else:
-            block = {
-                    'previous_hash' : previous_hash,
-                    'timestamp' : int(time.time()),
-                    'index' : len(self.chain) + 1,
-                    'difficulty': '0',
-                    'proof' : self.proof,
-                    'merkle_root' : root_tree(self.transaction),
-                    'transaction' : self.transaction}
-            output = self.proof_of_work(block)
-            block['proof'] = output['proof']
-            block['hash'] = output['hash']
-            self.transaction = []
-            self.chain.append(block)
-            network = self.read_node()
-            for nodes in network:
-                requests.get(f'http://{nodes}/replace_chain')
+        block = {
+                'previous_hash' : self.previous_hash,
+                'timestamp' : int(time.time()),
+                'index' : len(self.chain) + 1,
+                'difficulty': '0',
+                'proof' : self.proof,
+                'merkle_root' : root_tree(transaction),
+                'transaction' : transaction}
+        output = self.proof_of_work(block)
+        block['proof'] = output['proof']
+        block['hash'] = output['hash']
+        self.transaction = []
+        self.chain.append(block)
+        return block
+        
+    def create_block(self, previous_hash):
+        block = {
+                'previous_hash' : previous_hash,
+                'timestamp' : int(time.time()),
+                'index' : len(self.chain) + 1,
+                'difficulty': '0',
+                'proof' : self.proof,
+                'merkle_root' : root_tree(self.transaction),
+                'transaction' : self.transaction}
+        output = self.proof_of_work(block)
+        block['proof'] = output['proof']
+        block['hash'] = output['hash']
+        self.transaction = []
+        self.chain.append(block)
+        network = self.read_node()
+        for nodes in network:
+            requests.get(f'http://{nodes}/replace_chain')
         return block
     
     def  get_previous_block(self):
         return self.chain[-1]
 
     def proof_of_work(self, mine_block):
-        proof = 1
         difficulty = 1
         output = {}
-        mine_block['proof'] = proof
+        mine_block['proof'] = self.proof
         hash_operation = self.hash(mine_block)
         while not hash_operation.startswith('0' * difficulty):
-            print("Nonce = ",proof)
+            print("Nonce = ", self.proof)
             print("hash from ^ nonce = ",hash_operation)
-            proof += 1
+            self.proof += 1
             hash_operation = self.hash(hash_operation)
         output['hash'] = hash_operation
-        output['proof'] = proof
-        print("Hasil nonce = ",proof)
+        output['proof'] = self.proof
+        print("Hasil nonce = ", self.proof)
         print("Hasil hash=",hash_operation)
+        self.proof = 1
         return output
     
     def hash(self, block):
@@ -127,8 +126,8 @@ class Blockchain:
                                  'output count' : 0,
                                  'output' : receiver,
                                  'lock time' : 00000000})
-        previous_block = self.get_previous_block()
-        return previous_block['index'] + 1
+        #previous_block = self.get_previous_block()
+        return self.get_previous_block()['index'] + 1
         
     def replace_chain(self):
         network = self.read_node()
@@ -303,8 +302,7 @@ def check_nodes():
 
 @app.route('/check_transaction', methods = ['GET'])
 def check_transaction():
-    check_mempool = blockchain.transaction
-    response = {'transaction' : check_mempool}
+    response = {'transaction' : blockchain.transaction}
     return jsonify(response), 200
 
 @app.route('/quit_network', methods = ['GET'])

@@ -8,12 +8,12 @@ import requests
 from tkinter import filedialog
 import numpy as np
 from PIL import Image
+#import skvideo.io
 
 class Wallet:
     def __init__(self):
         self.private_key = "60cf347dbc59d31c1358c8e5cf5e45b822ab85b79cb32a9f3d98184779a9efc1"
-        byte_ = codecs.decode(self.private_key, 'hex')
-        self.sk = SigningKey.from_string(byte_, curve=SECP256k1)
+        self.sk = SigningKey.from_string(codecs.decode(self.private_key, 'hex'), curve=SECP256k1)
         vk = self.sk.verifying_key #public key
         self.vk_toString = vk.to_string().hex()
         ripemd160 = hashlib.new('ripemd160') #calling ripemd160
@@ -40,34 +40,26 @@ class Wallet:
         file_read.close()
         json_file = json.loads(data)
         for nodes in json_file['nodes']:
-            url = f"http://{nodes}/add_transaction"
-            response = requests.post(url, json=transaction)
+            response = requests.post(f"http://{nodes}/add_transaction", json=transaction)
             print(response.text)
             print(f"{nodes, response}")
         return print("broadcast to mempool")
     
     def transaction(self, amount):
         input_address = input("masukkan address = ")
-        #print(self.failed_signature)
-        public_key = self.vk_toString
-        previous_tx = self.previous_tx
-        byte_prev = previous_tx.encode()
+        byte_prev = self.previous_tx.encode()
         byte_signature = self.sk.sign(byte_prev)
         signature = byte_signature.hex()           
         tx = {
-                'input' : [{'previous_tx' : previous_tx,
+                'input' : [{'previous_tx' : self.previous_tx,
                         'index' : 000000, #nilai index ke berapa yang di ambil dr output transaksi sebelumnya
                         'size' : 0,
                         'signature' : signature, #signature dari private key dengan hash tx sebelumnya
-                        'sender_public_key' : public_key,
+                        'sender_public_key' : self.vk_toString,
                         'sequence' : 'ffffffff'}],
                 'output' : [{'amount' : amount,
                             'receiver' : input_address,
-                            'receiver_public_key' : public_key, }]}
-        #dumps_hash_tx = json.dumps(tx, default = str)
-        #hash_tx = hashing(dumps_hash_tx)
-        #hash_tx_dict = {"hash" : hash_tx}
-        #tx.update(hash_tx_dict)
+                            'receiver_public_key' : self.vk_toString, }]}
         return tx
     
     def get_transaction(self):
@@ -77,20 +69,19 @@ class Wallet:
             filetypes=(
                 ("png files", "*.png"),
                 ("jpg files", "*.jpg"),
-                ("bmp files", "*.bmp")
+                ("bmp files", "*.bmp"),
+                ("All files", "*")
             )
         )
         image = filename.name
         amount = np.asarray(Image.open(image))
+        #amount = skvideo.io.vread(image)
         return str(amount)
     
     def file_check(self):
-        private_key = self.private_key
-        public_key = self.vk_toString
-        address = self.encrypted_public_key
         file = pathlib.Path(self.filename)
         if file.exists():   
-            print("PUBLIC KEY = ", public_key)
+            print("PUBLIC KEY = ", self.vk_toString)
             get_tx = self.get_transaction()
             print("POST TRANSACTION")
             file_read = open(self.filename, "r")
@@ -106,7 +97,7 @@ class Wallet:
             file_write.close()
             self.broadcast(tx)
         else:
-            self.new(private_key=private_key, public_key=public_key, address=address)
+            self.new(self.private_key, self.vk_toString, self.encrypted_public_key)
             print("make new file")
             self.file_check()
 
