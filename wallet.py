@@ -14,18 +14,25 @@ class Wallet:
     def __init__(self):
         self.private_key = "60cf347dbc59d31c1358c8e5cf5e45b822ab85b79cb32a9f3d98184779a9efc1"
         self.sk = SigningKey.from_string(codecs.decode(self.private_key, 'hex'), curve=SECP256k1)
-        vk = self.sk.verifying_key #public key
-        self.vk_toString = vk.to_string().hex()
-        ripemd160 = hashlib.new('ripemd160') #calling ripemd160
-        ripemd160.update(self.vk_toString.encode())
-        self.encrypted_public_key = ripemd160.hexdigest() #encrypted public key
-        self.previous_tx = "0"
-        self.filename = "wallet.json"
-        self.nodes_file = "nodes.json"
-        self.file_check()
+        vk = self.sk.verifying_key
+        self.public_key = vk.to_string().hex()
 
-    def new(self, private_key, public_key, address):
-        f = open(self.filename, "w+")
+        ripemd160 = hashlib.new('ripemd160') #calling ripemd160
+        ripemd160.update(self.public_key.encode())
+        self.encrypted_public_key = ripemd160.hexdigest() #encrypted public key
+
+        self.previous_tx = "0"
+        self.file_check()
+    
+    def open_file(self, filename):
+        file_read = open(filename, "r")
+        file_read.seek(0)
+        data = file_read.read()
+        file_read.close()
+        return json.loads(data)
+
+    def new(self, filename, private_key, public_key, address):
+        f = open(filename, "w+")
         wallet_tx = {"private_key" : private_key,
                      "public_key" : public_key,
                      "address" : address,
@@ -34,11 +41,8 @@ class Wallet:
         f.close()
     
     def broadcast(self, transaction):
-        file_read = open(self.nodes_file, "r")
-        file_read.seek(0)
-        data = file_read.read()
-        file_read.close()
-        json_file = json.loads(data)
+        nodes_file = "nodes.json"
+        json_file = self.open_file(nodes_file)
         for nodes in json_file['nodes']:
             response = requests.post(f"http://{nodes}/add_transaction", json=transaction)
             print(response.text)
@@ -55,11 +59,11 @@ class Wallet:
                         'index' : 000000, #nilai index ke berapa yang di ambil dr output transaksi sebelumnya
                         'size' : 0,
                         'signature' : signature, #signature dari private key dengan hash tx sebelumnya
-                        'sender_public_key' : self.vk_toString,
+                        'sender_public_key' : self.public_key,
                         'sequence' : 'ffffffff'}],
                 'output' : [{'amount' : amount,
                             'receiver' : input_address,
-                            'receiver_public_key' : self.vk_toString, }]}
+                            'receiver_public_key' : self.public_key, }]}
         return tx
     
     def get_transaction(self):
@@ -79,25 +83,22 @@ class Wallet:
         return str(amount)
     
     def file_check(self):
-        file = pathlib.Path(self.filename)
+        filename = "wallet.json"
+        file = pathlib.Path(filename)
         if file.exists():   
-            print("PUBLIC KEY = ", self.vk_toString)
+            print("PUBLIC KEY = ", self.public_key)
             get_tx = self.get_transaction()
             print("POST TRANSACTION")
-            file_read = open(self.filename, "r")
-            file_read.seek(0)
-            data = file_read.read()
-            file_read.close()
-            jsonfile = json.loads(data)
+            jsonfile = self.open_file(filename)
             tx = self.transaction(get_tx)
             json_tx = jsonfile["transaction"].append(tx)
             json_data = json.dumps(jsonfile["transaction"])
-            file_write = open(self.filename, "w")
+            file_write = open(filename, "w")
             file_write.write(json.dumps(jsonfile))
             file_write.close()
             self.broadcast(tx)
         else:
-            self.new(self.private_key, self.vk_toString, self.encrypted_public_key)
+            self.new(filename, self.private_key, self.public_key, self.encrypted_public_key)
             print("make new file")
             self.file_check()
 

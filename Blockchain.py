@@ -10,11 +10,10 @@ from Gimli_Hash import hashing
 
 class Blockchain:
     def __init__(self):
-        self.chain = []
-        self.transaction = []
+        self.chain, self.transaction = [], []
         self.previous_hash = '00000000000000'
+        self.difficulty = 1
         self.proof = 1
-        self.nodes_file = "nodes.json"
         self.nodes = {} #empty set
         self.url_address = "127.0.0.1:5001"
         self.file_check()
@@ -23,14 +22,16 @@ class Blockchain:
         else :
             self.replace_chain()
         
-    
-    def read_node(self):
-        file_read = open(self.nodes_file, "r")
+    def open_file(self):
+        nodes_file = "nodes.json"
+        file_read = open(nodes_file, "r")
         file_read.seek(0)
         data = file_read.read()
         file_read.close()
+        return json.loads(data)
 
-        json_file = json.loads(data)
+    def read_node(self):
+        json_file = self.open_file()
         return json_file["nodes"]
     
     def tx_validation(self, _input):
@@ -65,12 +66,12 @@ class Blockchain:
                 'previous_hash' : self.previous_hash,
                 'timestamp' : int(time.time()),
                 'index' : len(self.chain) + 1,
-                'difficulty': '0',
-                'proof' : self.proof,
+                'difficulty': '0' * self.difficulty,
+                'nonce' : self.proof,
                 'merkle_root' : root_tree(transaction),
                 'transaction' : transaction}
         output = self.proof_of_work(block)
-        block['proof'] = output['proof']
+        block['nonce'] = output['nonce']
         block['hash'] = output['hash']
         self.transaction = []
         self.chain.append(block)
@@ -81,12 +82,12 @@ class Blockchain:
                 'previous_hash' : previous_hash,
                 'timestamp' : int(time.time()),
                 'index' : len(self.chain) + 1,
-                'difficulty': '0',
-                'proof' : self.proof,
+                'difficulty': '0' * self.difficulty,
+                'nonce' :self.proof,
                 'merkle_root' : root_tree(self.transaction),
                 'transaction' : self.transaction}
         output = self.proof_of_work(block)
-        block['proof'] = output['proof']
+        block['nonce'] = output['nonce']
         block['hash'] = output['hash']
         self.transaction = []
         self.chain.append(block)
@@ -95,23 +96,20 @@ class Blockchain:
             requests.get(f'http://{nodes}/replace_chain')
         return block
     
-    def  get_previous_block(self):
+    def get_previous_block(self):
         return self.chain[-1]
 
     def proof_of_work(self, mine_block):
-        difficulty = 1
         output = {}
-        mine_block['proof'] = self.proof
+        mine_block['nonce'] = self.proof
         hash_operation = self.hash(mine_block)
-        while not hash_operation.startswith('0' * difficulty):
-            print("Nonce = ", self.proof)
-            print("hash from ^ nonce = ",hash_operation)
+        while not hash_operation.startswith('0' * self.difficulty):
+            print("Nonce = ", self.proof, "\nhash from ^ nonce = ", hash_operation)
             self.proof += 1
             hash_operation = self.hash(hash_operation)
         output['hash'] = hash_operation
-        output['proof'] = self.proof
-        print("Hasil nonce = ", self.proof)
-        print("Hasil hash=",hash_operation)
+        output['nonce'] = self.proof
+        print("Nonce = ", self.proof, "\nhash from ^ nonce = ", hash_operation)
         self.proof = 1
         return output
     
@@ -125,7 +123,7 @@ class Blockchain:
                                  'input' : sender ,
                                  'output count' : 0,
                                  'output' : receiver,
-                                 'lock time' : 00000000})
+                                 'lock time' : '00000000'})
         #previous_block = self.get_previous_block()
         return self.get_previous_block()['index'] + 1
         
@@ -167,16 +165,11 @@ class Blockchain:
         return False
     
     def file_check(self):
-        #nodes_file = "nodes.json"
+        nodes_file = "nodes.json"
 
-        file = pathlib.Path(self.nodes_file)
+        file = pathlib.Path(nodes_file)
         if file.exists():    
-            file_read = open(self.nodes_file, "r")
-            file_read.seek(0)
-            data = file_read.read()
-            file_read.close()
-
-            json_file = json.loads(data)
+            json_file = self.open_file()
     
             self.nodes.update(json_file)
             #requests.get(url_address+"/replace_chain")   
@@ -192,7 +185,7 @@ class Blockchain:
     
         else:
             print("make a node file .json")
-            f = open(self.nodes_file, "w+")
+            f = open(nodes_file, "w+")
             wallet_tx = {"nodes" : [self.url_address]}
             f.write(json.dumps(wallet_tx))
             f.close()
@@ -225,7 +218,7 @@ def mine_block():
                 'messages' : 'Congratulation you just mined a block',
                 'index' : block['index'],
                 'timestamp' : block['timestamp'],
-                'proof' : block['proof'],
+                'nonce' : block['nonce'],
                 'previous_hash' : block['previous_hash'],
                 'transaction' : block['transaction'],
                 'hashing_time' : processing_time
