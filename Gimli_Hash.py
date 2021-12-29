@@ -27,7 +27,7 @@ def squeeze_block(s: state) -> bytes_t:
 
 @typechecked
 def gimli_hash(bytes_masukan: vlbytes_t, panjang_input: int) -> bytes_t:
-    s: state = array.create(12, uint32(0))
+    s: state = array.create(rate, uint32(0))
     num_full_block: int = panjang_input // rate
     for i in range(num_full_block):
         block_masukan: bytes_t = bytes_masukan[rate*i: rate*(i + 1)]

@@ -12,8 +12,7 @@ class Blockchain:
     def __init__(self):
         self.chain, self.transaction = [], []
         self.previous_hash = '00000000000000'
-        self.difficulty = 1
-        self.proof = 1
+        self.difficulty, self.proof = 1, 1
         self.nodes = {} #empty set
         self.url_address = "127.0.0.1:5001"
         self.file_check()
@@ -62,15 +61,24 @@ class Blockchain:
                             'receiver' : '',
                             'receiver_public_key' : '', }],
                 'lock time' : '00000000'}]
+        print("Building Merkle Tree...")
+        start_time = time.time()
+        proses_merkle = root_tree(transaction)
+        end_time = time.time()
+        print("Merkle Tree duration:", end_time-start_time)
         block = {
                 'previous_hash' : self.previous_hash,
                 'timestamp' : int(time.time()),
                 'index' : len(self.chain) + 1,
                 'difficulty': '0' * self.difficulty,
                 'nonce' : self.proof,
-                'merkle_root' : root_tree(transaction),
+                'merkle_root' : proses_merkle,
                 'transaction' : transaction}
+        print("Starting finding nonce...")
+        start_time = time.time()
         output = self.proof_of_work(block)
+        end_time = time.time()
+        print("Processing time:", end_time-start_time)
         block['nonce'] = output['nonce']
         block['hash'] = output['hash']
         self.transaction = []
@@ -78,15 +86,24 @@ class Blockchain:
         return block
         
     def create_block(self, previous_hash):
+        print("Building Merkle Tree...")
+        start_time = time.time()
+        proses_merkle = root_tree(self.transaction)
+        end_time = time.time()
+        print("Merkle Tree time:", end_time-start_time)
         block = {
                 'previous_hash' : previous_hash,
                 'timestamp' : int(time.time()),
                 'index' : len(self.chain) + 1,
                 'difficulty': '0' * self.difficulty,
                 'nonce' :self.proof,
-                'merkle_root' : root_tree(self.transaction),
+                'merkle_root' : proses_merkle,
                 'transaction' : self.transaction}
+        print("Starting finding nonce...")
+        start_time = time.time()
         output = self.proof_of_work(block)
+        end_time = time.time()
+        print("Processing time:", end_time-start_time)
         block['nonce'] = output['nonce']
         block['hash'] = output['hash']
         self.transaction = []
