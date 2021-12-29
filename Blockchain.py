@@ -12,7 +12,7 @@ class Blockchain:
     def __init__(self):
         self.chain, self.transaction = [], []
         self.previous_hash = '00000000000000'
-        self.difficulty, self.proof = 1, 1
+        self.difficulty = 1
         self.nodes = {} #empty set
         self.url_address = "127.0.0.1:5001"
         self.file_check()
@@ -71,7 +71,7 @@ class Blockchain:
                 'timestamp' : int(time.time()),
                 'index' : len(self.chain) + 1,
                 'difficulty': '0' * self.difficulty,
-                'nonce' : self.proof,
+                'nonce' : 0,
                 'merkle_root' : proses_merkle,
                 'transaction' : transaction}
         print("Starting finding nonce...")
@@ -96,7 +96,7 @@ class Blockchain:
                 'timestamp' : int(time.time()),
                 'index' : len(self.chain) + 1,
                 'difficulty': '0' * self.difficulty,
-                'nonce' :self.proof,
+                'nonce' :0,
                 'merkle_root' : proses_merkle,
                 'transaction' : self.transaction}
         print("Starting finding nonce...")
@@ -117,17 +117,23 @@ class Blockchain:
         return self.chain[-1]
 
     def proof_of_work(self, mine_block):
+        proof = 1
+        check_proof = False
         output = {}
-        mine_block['nonce'] = self.proof
-        hash_operation = self.hash(mine_block)
-        while not hash_operation.startswith('0' * self.difficulty):
-            print("Nonce = ", self.proof, "\nhash from ^ nonce = ", hash_operation)
-            self.proof += 1
-            hash_operation = self.hash(hash_operation)
-        output['hash'] = hash_operation
-        output['nonce'] = self.proof
-        print("Nonce = ", self.proof, "\nhash from ^ nonce = ", hash_operation)
-        self.proof = 1
+        while check_proof is False:
+            mine_block['nonce'] = proof
+            hash_operation = self.hash(mine_block)
+            if hash_operation[:1] == '0' * self.difficulty:
+                output['hash'] = hash_operation
+                output['nonce'] = proof
+                #self.block['hash'] = hash_operation
+                print("Hasil nonce = ",proof)
+                print("Hasil hash=",hash_operation)
+                check_proof = True
+            else : 
+                print("Nonce = ",proof)
+                print("hash from ^ nonce = ",hash_operation)
+                proof += 1
         return output
     
     def hash(self, block):
@@ -196,7 +202,7 @@ class Blockchain:
 
             json_file["nodes"].append(self.url_address)
 
-            file_write = open(self.nodes_file, "w")
+            file_write = open(nodes_file, "w")
             json_write = file_write.write(json.dumps(json_file))
             file_write.close()
     

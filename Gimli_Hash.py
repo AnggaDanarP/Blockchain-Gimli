@@ -49,10 +49,9 @@ def gimli_hash(bytes_masukan: vlbytes_t, panjang_input: int) -> bytes_t:
 
 
 def hashing(_string: str):
-    a = [ord(c) for c in _string]
     length = len(_string)
     block_message = array_t(uint8_t, length)
-    state_input = block_message([uint8(i) for i in a])
+    state_input = block_message([uint8(i) for i in [ord(c) for c in _string]])
     out = gimli_hash(state_input, length)
     hasil = bytes.to_hex(out)
     return hasil
