@@ -6,8 +6,7 @@ from ecdsa import SECP256k1, VerifyingKey, BadSignatureError
 import codecs
 from flask import Flask, jsonify, request
 import requests
-from Gimli_Hash import hashing
-
+import hash
 class Blockchain:
     def __init__(self):
         self.chain, self.transaction = [], []
@@ -123,22 +122,21 @@ class Blockchain:
         while check_proof is False:
             mine_block['nonce'] = proof
             hash_operation = self.hash(mine_block)
-            if hash_operation[:1] == '0' * self.difficulty:
+            if hash_operation[:1] == '0':
                 output['hash'] = hash_operation
                 output['nonce'] = proof
                 #self.block['hash'] = hash_operation
                 print("Hasil nonce = ",proof)
                 print("Hasil hash=",hash_operation)
                 check_proof = True
-            else : 
-                print("Nonce = ",proof)
-                print("hash from ^ nonce = ",hash_operation)
-                proof += 1
+            print("Nonce = ",proof)
+            print("hash from ^ nonce = ",hash_operation)
+            proof += 1
         return output
     
     def hash(self, block):
         encoded_block = json.dumps(block, sort_keys = True, default = str)
-        return hashing(encoded_block)
+        return hash.gimli(encoded_block)
 
     def add_transaction(self, sender, receiver):
         self.transaction.append({'version': '01000000',

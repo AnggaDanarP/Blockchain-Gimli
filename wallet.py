@@ -1,4 +1,3 @@
-from Gimli_Hash import hashing
 from ecdsa import SigningKey, SECP256k1
 import codecs
 import hashlib

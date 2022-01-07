@@ -21,11 +21,12 @@ from ecdsa import SECP256k1, VerifyingKey
 
 #=======PENGUJIAN===========
 import time
-from Gimli_Hash import hashing
+#from Gimli_Hash import hashing
 #from d_quark import digest
 #from s_quark import digest
 #from c_quark import digest
 #import hashlib
+import hash
 #==========================
 
 import codecs
@@ -44,12 +45,12 @@ class Blockchain:
         self.nodes_file = "nodes.json"
         self.nodes = {} #empty set
         self.url_address = "127.0.0.1:5002"
-        print(self.read_node())
-        network = self.read_node()
+        #print(self.read_node())
+        #network = self.read_node()
         self.file_check()
         self.proof = 1
         self.previous_hash = '0'
-        if network == []:
+        if self.transaction == []:
             print("buat block baru")
             self.create_block(self.previous_hash)
         else:
@@ -146,7 +147,7 @@ class Blockchain:
         encoded_block1 = json.dumps(block, sort_keys = True, default = str)
 
         #return hashlib.sha256(encoded_block).hexdigest()
-        return hashing(encoded_block1)
+        return hash.gimli(encoded_block1)
     
     
     def add_transaction(self, sender, receiver, hash_):
