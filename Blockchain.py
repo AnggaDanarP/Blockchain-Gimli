@@ -125,9 +125,6 @@ class Blockchain:
             if hash_operation[:1] == '0':
                 output['hash'] = hash_operation
                 output['nonce'] = proof
-                #self.block['hash'] = hash_operation
-                print("Hasil nonce = ",proof)
-                print("Hasil hash=",hash_operation)
                 check_proof = True
             print("Nonce = ",proof)
             print("hash from ^ nonce = ",hash_operation)
