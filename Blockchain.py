@@ -122,7 +122,7 @@ class Blockchain:
         while check_proof is False:
             mine_block['nonce'] = proof
             hash_operation = self.hash(mine_block)
-            if hash_operation[:1] == '0':
+            if hash_operation[:4] == '0000':
                 output['hash'] = hash_operation
                 output['nonce'] = proof
                 check_proof = True
@@ -133,7 +133,7 @@ class Blockchain:
     
     def hash(self, block):
         encoded_block = json.dumps(block, sort_keys = True, default = str)
-        return hash.gimli(encoded_block)
+        return hash.gimli(encoded_block).replace(" ", "")
 
     def add_transaction(self, sender, receiver):
         self.transaction.append({'version': '01000000',

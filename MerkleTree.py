@@ -33,11 +33,11 @@ class Merkle_tree:
                 current_right = ''
                 
             #apply the hash value to current hash
-            current_hash = hash.gimli(current) #using SHA-256
+            current_hash = hash.gimli(current).replace(" ", "") #using SHA-256
             
             #if the current right hash is not an empty string ''
             if current_right != '':
-                current_right_hash = hash.gimli(current_right) #using SHA-256
+                current_right_hash = hash.gimli(current_right).replace(" ", "") #using SHA-256
                 
             #add transaction to the dictionary
             past_transaction[listoftransaction[index]] = current_hash
