@@ -7,6 +7,7 @@ import codecs
 from flask import Flask, jsonify, request
 import requests
 import hash
+
 class Blockchain:
     def __init__(self):
         self.chain, self.transaction = [], []
