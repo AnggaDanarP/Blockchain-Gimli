@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import pathlib
 import time
@@ -6,7 +7,8 @@ from ecdsa import SECP256k1, VerifyingKey, BadSignatureError
 import codecs
 from flask import Flask, jsonify, request
 import requests
-import hash
+#import hash
+import hashlib
 
 class Blockchain:
     def __init__(self):
@@ -47,23 +49,27 @@ class Blockchain:
         return check_sig
     
     def genesis_block(self):
-        transaction = [{'version': '01000000',
-                'input count' : 0,
-                'input' : [{'previous_tx' : self.previous_hash,
+        transaction = [{
+                'hash' : '',
+                'version': '1',
+                'input count' : '01000000',
+                'input' : [{
+                        'hash' : '',
+                        'previous transaction' : self.previous_hash,
                         'index' : 000000,
-                        'size' : 0,
-                        'signature' : '', 
+                        'scriptSig size' : '0',
+                        'signature' : '04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73', 
                         'sender_public_key' : '',
-                        'sequence' : 'ffffffff'}],
+                        'sequence' : 'FFFFFFFF'}],
                 'output count' : 0,
                 'output' : [{'amount' : '',
-                            'receiver' : '',
-                            'receiver_public_key' : '', }],
-                'lock time' : '00000000'}]
+                            'scriptPublicKey size' : '0',
+                            'scriptPublicKey' : '4104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac'}],
+                'lock time' : 0}]
         block = {
+                'index' : len(self.chain) + 1,
                 'previous_hash' : self.previous_hash,
                 'timestamp' : int(time.time()),
-                'index' : len(self.chain) + 1,
                 'difficulty': '0000',
                 'nonce' : 0,
                 'merkle_root' : root_tree(transaction),
@@ -77,9 +83,9 @@ class Blockchain:
         
     def create_block(self, previous_hash):
         block = {
+                'index' : len(self.chain) + 1,
                 'previous_hash' : previous_hash,
                 'timestamp' : int(time.time()),
-                'index' : len(self.chain) + 1,
                 'difficulty': '0000',
                 'nonce' :0,
                 'merkle_root' : root_tree(self.transaction),
@@ -101,6 +107,7 @@ class Blockchain:
         proof = 1
         check_proof = False
         output = {}
+        start_time = time.time()
         while check_proof is False:
             mine_block['nonce'] = proof
             hash_operation = self.hash(mine_block)
@@ -111,11 +118,16 @@ class Blockchain:
             print("Nonce = ",proof)
             print("hash from ^ nonce = ",hash_operation)
             proof += 1
+        end_time = time.time()
+        result = end_time - start_time
+        print("Time to mine block = ",int(round(result * 1000)),"ms")
         return output
     
     def hash(self, block):
-        encoded_block = json.dumps(block, sort_keys = True, default = str)
-        return hash.gimli(encoded_block).replace(" ", "")
+        #encoded_block = json.dumps(block, sort_keys = True, default = str)
+        #return hash.gimli(encoded_block).replace(" ", "")
+        encoded_block = json.dumps(block, sort_keys = True, default = str).encode()
+        return hashlib.sha256(encoded_block).hexdigest()
 
     def add_transaction(self, sender, receiver):
         self.transaction.append({'version': '01000000',
@@ -124,8 +136,8 @@ class Blockchain:
                                  'output count' : 0,
                                  'output' : receiver,
                                  'lock time' : '00000000'})
-        #previous_block = self.get_previous_block()
-        return self.get_previous_block()['index'] + 1
+        previous_block = self.get_previous_block()
+        return previous_block['index'] + 1
         
     def replace_chain(self):
         network = self.read_node()
@@ -238,7 +250,7 @@ def get_chain():
 @app.route('/add_transaction', methods = ['POST'])
 def add_transaction():
     json = request.get_json()
-    transaction_keys = ['input', 'output']
+    transaction_keys = ['input', 'output', 'hash']
     if not all(key in json for key in transaction_keys):
         return 'Lengkapi data yang dibutuhkan', 400
     try:

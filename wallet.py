@@ -7,6 +7,7 @@ import requests
 from tkinter import filedialog
 import numpy as np
 from PIL import Image
+import hash
 #import skvideo.io
 
 class Wallet:
@@ -52,17 +53,21 @@ class Wallet:
         input_address = input("masukkan address = ")
         byte_prev = self.previous_tx.encode()
         byte_signature = self.sk.sign(byte_prev)
-        signature = byte_signature.hex()           
+        signature = byte_signature.hex()   
         tx = {
-                'input' : [{'previous_tx' : self.previous_tx,
+                'input' : [{
+                        'previous_tx' : self.previous_tx,
                         'index' : 000000, #nilai index ke berapa yang di ambil dr output transaksi sebelumnya
-                        'size' : 0,
+                        'scriptSig size' : int(len(signature)/2),
                         'signature' : signature, #signature dari private key dengan hash tx sebelumnya
                         'sender_public_key' : self.public_key,
                         'sequence' : 'ffffffff'}],
                 'output' : [{'amount' : amount,
-                            'receiver' : input_address,
-                            'receiver_public_key' : self.public_key, }]}
+                            'scriptPublicKey size' : int(len(input_address)/2),
+                            'scriptPublicKey' : input_address }]}
+        encoded_block = json.dumps(tx, sort_keys = True, default = str)     
+        hash_amount = hash.gimli(encoded_block).replace(" ", "")
+        tx.update({"hash" : hash_amount})   
         return tx
     
     def get_transaction(self):

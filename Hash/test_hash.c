@@ -26,6 +26,8 @@ void print_test(char* string, uint8_t* output) {
 	printf("-\n");
 	printf("input: ");
 	print_hex(string,strlen(string));
+	printf("-\n");
+	printf("output: ");
 	print_output(output);
 	printf("----------------------\n");
 }
