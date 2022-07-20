@@ -7,8 +7,8 @@ from ecdsa import SECP256k1, VerifyingKey, BadSignatureError
 import codecs
 from flask import Flask, jsonify, request
 import requests
-#import hash
-import hashlib
+import hash
+#import hashlib
 
 class Blockchain:
     def __init__(self):
@@ -17,7 +17,7 @@ class Blockchain:
         self.nodes = {} #empty set
         self.url_address = "127.0.0.1:5001"
         self.file_check()
-        if self.transaction == []:
+        if len(self.chain) == 0:
             self.genesis_block()
         else :
             self.replace_chain()
@@ -124,10 +124,10 @@ class Blockchain:
         return output
     
     def hash(self, block):
-        #encoded_block = json.dumps(block, sort_keys = True, default = str)
-        #return hash.gimli(encoded_block).replace(" ", "")
-        encoded_block = json.dumps(block, sort_keys = True, default = str).encode()
-        return hashlib.sha256(encoded_block).hexdigest()
+        encoded_block = json.dumps(block, sort_keys = True, default = str)
+        return hash.gimli(encoded_block).replace(" ", "")
+        #encoded_block = json.dumps(block, sort_keys = True, default = str).encode()
+        #return hashlib.sha256(encoded_block).hexdigest()
 
     def add_transaction(self, sender, receiver):
         self.transaction.append({'version': '01000000',
@@ -337,7 +337,7 @@ def quit_network():
     response = {'message' : "Telah berpisah dari Network"}
     return response
 
-app.run(host = '0.0.0.0', port = 5001)
+app.run(host = '127.0.0.1', port = 5001)
 
 
 @app.errorhandler(Exception)
